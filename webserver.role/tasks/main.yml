@@ -1,0 +1,9 @@
+- name: Copy Apache Conf File
+  template:
+    src: 000-default.conf.j2
+    dest: /etc/apache2/sites-available/000-default.conf
+    owner: root
+    group: root
+    mode: 0755
+  notify:
+    - restart apache

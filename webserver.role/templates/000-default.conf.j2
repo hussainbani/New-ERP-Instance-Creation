@@ -1,0 +1,30 @@
+<VirtualHost *:80>
+    ServerAdmin {{ admin_email }}
+    DocumentRoot "/var/www/default/"
+    ServerName {{ domain_name_front }}
+    ServerAlias www.{{ domain_name_front }}
+    ErrorLog "/var/log/apache2/{{ domain_name_front }}-error_log"
+    CustomLog "/var/log/apache2/{{ domain_name_front }}-access_log" common
+   <Directory /var/www/default/>
+	AllowOverride All
+        Order allow,deny
+        Allow from All
+        Require all granted
+   </Directory>
+</VirtualHost>
+
+<VirtualHost *:80>
+        ServerName {{ domain_name_back }}
+        ServerAlias www.{{ domain_name_back }}
+        ServerAdmin {{ admin_email }}
+        DocumentRoot /var/www/erp.usawholesaleinc.com/
+        ErrorLog /var/log/apache2/{{ domain_name_back }}-error.log
+        CustomLog /var/log/apache2/{{ domain_name_back }}-access.log combined
+	LogLevel info
+	<Directory /var/www/erp.usawholesaleinc.com/>
+	AllowOverride All
+        Order allow,deny
+        Allow from All
+        Require all granted    	
+</Directory>
+</VirtualHost>

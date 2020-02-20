@@ -1,0 +1,9 @@
+{
+	"ClientName": "Hussain",
+	"SecurityGroup": ["sg-0151d3e82a94d7e2c"],
+	"KeyName": "LAMP",
+	"ImageId": "ami-0ed63b87010ba2db4",
+	"InstanceType": "t2.micro",
+	"Region": "us-east-1"
+
+}
