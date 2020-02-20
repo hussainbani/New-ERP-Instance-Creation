@@ -1,0 +1,80 @@
+pipeline {
+   agent any
+   
+   stages {
+      stage('Create Domain') {
+          steps {
+              script {
+            response = httpRequest httpMode: 'POST', acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON', url: "http://localhost/api/v1/create_domain?fqdn=${domain}", responseHandle: 'STRING'
+            println('Response: '+response.content)
+                      }
+          }
+      }
+
+      stage('Create Instance') {
+          steps {
+              script {
+            response = httpRequest httpMode: 'POST', acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON', url: "http://localhost/api/v1/create_instance?fqdn=${domain}&client_name=${client_name}", responseHandle: 'STRING'
+            println('Response: '+response.content)
+                      }
+          }
+      }
+
+      stage('Getting Public IP') {
+          steps {
+              script {
+            response = httpRequest httpMode: 'GET', acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON', url: "http://localhost/api/v1/public_ipv4?fqdn=${domain}", responseHandle: 'STRING', outputFile: 'body.json'
+            println('Response: '+response.content)
+                      }
+            sh "sed -i 's/\"//g' body.json"
+          }
+      }
+
+      stage('Add Record for FrontEnd') {
+          steps {
+              script {
+            env.requestBody = readFile 'body.json'
+            response = httpRequest httpMode: 'POST', acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON', url: "http://localhost/api/v1/add_record?fqdn=${domain}&domain=${domain}&value=${env.requestBody}", responseHandle: 'STRING'
+            println('Response: '+response.content)
+                      }
+          }
+      }
+
+      stage('Add Record for BackEnd') {
+          steps {
+              script {
+            env.requestBody = readFile 'body.json'
+            response = httpRequest httpMode: 'POST', acceptType: 'APPLICATION_JSON', contentType: 'APPLICATION_JSON', url: "http://localhost/api/v1/add_record?fqdn=${domain}&domain=erp.${domain}&value=${env.requestBody}", responseHandle: 'STRING'
+            println('Response: '+response.content)
+                      }
+          }
+      }
+   
+    stage('Configure Management using ansible') {
+    environment {
+            hostIP = sh(
+                        script: "cat body.json",
+                        returnStdout: true,
+                        )
+        }
+    steps {
+          ansiblePlaybook(
+          inventoryContent: "${hostIP}",
+          playbook: '/ibberp/master.yml',
+          credentialsId: '0a897b93-8364-4c19-8090-d1288a64bb12',
+          hostKeyChecking: false,
+          extraVars: [
+            domain_name: "${domain}",
+            branch: "${branch}"
+        ])
+        }
+    }
+
+    stage('Delete Misc file') {
+      steps {
+        sh "sudo rm -rf /ibberp/api/outputvariable.json"
+        sh "sudo rm -rf body.json"
+      }
+    }
+   }
+}
